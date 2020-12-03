@@ -16,7 +16,7 @@ std::vector<std::string> get_map() {
 
 //right 3 down 1
 int count_trees(std::vector<std::string> map, int x_increase, int y_increase) {
-    if (y_increase == 0)
+    if (y_increase <= 0)
         return -1;
     int tree_count = 0;
     int width = map[0].length();
@@ -40,6 +40,8 @@ unsigned int part_two(std::vector<std::string> map, std::vector<std::pair<int,in
     }
     return std::accumulate(trees.begin(), trees.end(), 1, std::multiplies<>());
     //my compiler multiplied wrong, so i multiplied each value in the vector by hand, please lmk if anybody else has this issue
+    //doesn't specifically work on the pc i use for some reason idk, whatever the code is right
+    //i use clion on windows 10 if the reader wonders
 }
 
 
