@@ -11,6 +11,7 @@ std::vector<std::string> get_map() {
     while (getline(file, line)) {
         map.push_back(line);
     }
+	file.close();
     return map;
 }
 
