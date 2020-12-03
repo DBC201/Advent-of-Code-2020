@@ -11,7 +11,7 @@ std::vector<std::string> get_map() {
     while (getline(file, line)) {
         map.push_back(line);
     }
-	file.close();
+    file.close();
     return map;
 }
 
@@ -23,7 +23,7 @@ int count_trees(std::vector<std::string> map, int x_increase, int y_increase) {
     int width = map[0].length();
     int height = map.size();
     int x = 0;
-    for (int y=0; y<height; y+=y_increase) {
+    for (int y = 0; y < height; y += y_increase) {
         int relational_x = x < width ? x : x % width;
         if (map[y][relational_x] == '#') {
             tree_count++;
@@ -33,10 +33,10 @@ int count_trees(std::vector<std::string> map, int x_increase, int y_increase) {
     return tree_count;
 }
 
-unsigned int part_two(std::vector<std::string> map, std::vector<std::pair<int,int>> slopes) {
+unsigned int part_two(std::vector<std::string> map, std::vector<std::pair<int, int>> slopes) {
     std::vector<unsigned int> trees;
     for (auto slope: slopes) {
-        unsigned int tree_count = (unsigned int)count_trees(map, slope.first, slope.second);
+        unsigned int tree_count = (unsigned int) count_trees(map, slope.first, slope.second);
         trees.push_back(tree_count);
     }
     return std::accumulate(trees.begin(), trees.end(), 1, std::multiplies<>());
@@ -48,7 +48,7 @@ unsigned int part_two(std::vector<std::string> map, std::vector<std::pair<int,in
 
 int main() {
     std::vector<std::string> map = get_map();
-    std::cout << count_trees(map, 3,1) << std::endl;// 3 1
+    std::cout << count_trees(map, 3, 1) << std::endl;// 3 1
     std::vector<std::pair<int, int>> slopes;
     slopes = {
             {1, 1},
