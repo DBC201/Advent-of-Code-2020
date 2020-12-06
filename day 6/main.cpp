@@ -5,7 +5,9 @@
 
 typedef struct {
     int amount_of_people = 0;
-    std::map<char, int> answer_occurences; // could have been a pair vector since no random individual needs to be accessed?
+    std::map<char, int> answer_occurences; 
+	// could have been a pair vector since no random individual needs to be accessed?
+	// nvm easier to check for duplicates this way
 } group;
 
 int sum_group_questions(std::vector<group> groups) {
