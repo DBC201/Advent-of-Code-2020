@@ -2,16 +2,7 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
-
-std::vector<std::string> split(std::string str, char delimeter) {
-    std::stringstream ss(str);
-    std::string token;
-    std::vector<std::string> tokens;
-    while (getline(ss, token, delimeter)) {
-        tokens.push_back(token);
-    }
-    return tokens;
-}
+#include "../commonly_used_functions/library.cpp"
 
 bool part_one_valid(std::string password, std::vector<std::string> range_string, char letter) {
     int min = std::stoi(range_string[0]);

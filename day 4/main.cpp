@@ -4,6 +4,7 @@
 #include <vector>
 #include <sstream>
 #include <regex>
+#include "../commonly_used_functions/library.cpp"
 
 typedef struct {
     std::map<std::string, std::string> data = {
@@ -17,16 +18,6 @@ typedef struct {
             {"cid", ""}
     };
 } user;
-
-std::vector<std::string> split (std::string input, char delimeter) {
-    std::vector<std::string> tokens;
-    std::string token;
-    std::stringstream ss(input);
-    while (getline(ss, token, delimeter)) {
-        tokens.push_back(token);
-    }
-    return tokens;
-}
 
 bool part_one_valid(user user1){
     for (auto key : user1.data){
