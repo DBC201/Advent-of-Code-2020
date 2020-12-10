@@ -4,6 +4,12 @@
 #include <algorithm>
 #include <map>
 
+/*
+    distinct_count(adapters,1) recursively calls distinct_count(adapters, 2)
+    hence distinct_count(adapters, 2) gets calculated twice and so on
+    the cache stores calculated functions and when a function call is needed
+    cache is checked first to see if it has been calculated before
+ */
 std::map<int,unsigned long long> cache;
 unsigned long long distinct_count(std::vector<int> adapters, int last_index) {
     if (adapters.size() == last_index || adapters[adapters.size()-1]-adapters[last_index] <= 3)
