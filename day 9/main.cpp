@@ -25,7 +25,9 @@ std::vector<unsigned long long> get_sum_set(std::vector<unsigned long long> numb
         for (int j=i+1; j<numbers.size(); j++) {
             sum_values.push_back(numbers[j]);
             current_sum = std::accumulate(sum_values.begin(), sum_values.end(), 0);
-            if (current_sum == numbers[index])
+            if (current_sum > numbers[index] || j == index)
+                break;
+            else if (current_sum == numbers[index])
                 return sum_values;
         }
         sum_values.clear();
