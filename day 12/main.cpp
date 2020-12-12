@@ -49,19 +49,19 @@ private:
     }
 
     void move_north(int distance) {
-        y += distance + waypoint[1];
+        y += distance;
     }
 
     void move_south(int distance) {
-        y -= distance - waypoint[1];
+        y -= distance;
     }
 
     void move_east(int distance) {
-        x += distance + waypoint[0];
+        x += distance;
     }
 
     void move_west(int distance) {
-        x -= distance - waypoint[0];
+        x -= distance;
     }
 
     static int simplify_angle(int angle) {
@@ -73,15 +73,6 @@ private:
             return 360 + angle;
         else
             return angle;
-    }
-
-public:
-    Ship(int waypoint_x, int waypoint_y) {
-        x = 0;
-        y = 0;
-        angle = 0; // east is 0
-        waypoint[0] = waypoint_x;
-        waypoint[1] = waypoint_y;
     }
 
     void parse_instructions(std::string line) {
@@ -121,6 +112,22 @@ public:
             move_forward(value);
     }
 
+public:
+    Ship(int waypoint_x, int waypoint_y) {
+        x = 0;
+        y = 0;
+        angle = 0; // east is 0
+        waypoint[0] = waypoint_x;
+        waypoint[1] = waypoint_y;
+    }
+
+    void parse(std::string line) {
+        if (has_waypoint())
+            parse_waypoint_instructions(line);
+        else
+            parse_instructions(line);
+    }
+
     int manhattan_distance() {
         return std::abs(x) + std::abs(y);
     }
@@ -137,8 +144,8 @@ int main() {
     Ship ship(0, 0);
     Ship ship2(10, 1);
     while (getline(file, line)) {
-        ship.parse_instructions(line);
-        ship2.parse_waypoint_instructions(line);
+        ship.parse(line);
+        ship2.parse(line);
     }
     file.close();
     std::cout << ship.manhattan_distance() << std::endl;
