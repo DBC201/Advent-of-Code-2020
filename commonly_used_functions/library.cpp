@@ -12,3 +12,12 @@ std::vector<std::string> split(std::string str, char delimeter){
     }
     return tokens;
 }
+
+std::string remove_spaces(std::string str) {
+    for (int i=0; i<str.length(); i++) {
+        if (str[i] == ' ') {
+            str = str.substr(0,i) + str.substr(i+1);
+        }
+    }
+    return str;
+}
