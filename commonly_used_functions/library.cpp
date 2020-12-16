@@ -2,6 +2,22 @@
 #include <vector>
 #include <sstream>
 
+std::vector<std::string> split_by_string(std::string str, std::string delimeter) {
+    std::vector<std::string> tokens;
+    int start_index = str.find(delimeter);
+    if (start_index == std::string::npos) {
+        tokens.push_back(str);
+    } else {
+        while (start_index != -1) {
+            tokens.push_back(str.substr(0, start_index));
+            str = str.substr(start_index+delimeter.length());
+            start_index = str.find(delimeter);
+        }
+        tokens.push_back(str);
+    }
+    return tokens;
+}
+
 std::vector<std::string> split(std::string str, char delimeter){
     std::vector<std::string> tokens;
     std::stringstream ss(str);
