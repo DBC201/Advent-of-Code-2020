@@ -94,10 +94,8 @@ attribute_order(std::unordered_map<std::string, std::pair<std::pair<int, int>, s
                 }
             }
         }
-        if (all_empty){
-            std::cout << "more than a single permutation exist for this set of input" << std::endl;
+        if (all_empty)
             break;
-        }
     }
     return sorted;
 }
