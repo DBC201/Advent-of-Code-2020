@@ -77,12 +77,15 @@ attribute_order(std::unordered_map<std::string, std::pair<std::pair<int, int>, s
     std::unordered_map<std::string, int> sorted;
     std::unordered_map<int, bool> taken_indexes;
     while (taken_indexes.size() != tickets[0].size()) {
+        bool all_empty = false;
         for (auto &index: matching_indexes) {
             if (index.second.size() == 1) {
+                all_empty = true;
                 taken_indexes.insert({index.second[0], true});
                 sorted.insert({index.first, index.second[0]});
                 index.second.erase(index.second.begin());
-            }
+            } else
+                all_empty = false;
             for (int i=0; i<index.second.size(); i++) {
                 try {
                     if (taken_indexes.at(index.second[i]))
@@ -90,6 +93,10 @@ attribute_order(std::unordered_map<std::string, std::pair<std::pair<int, int>, s
                 } catch (std::out_of_range &e) {
                 }
             }
+        }
+        if (all_empty){
+            std::cout << "more than a single permutation exist for this set of input" << std::endl;
+            break;
         }
     }
     return sorted;
@@ -139,9 +146,6 @@ int main() {
     int invalid_sum = 0;
     std::vector<std::vector<int>> valid_tickets;
     while (getline(file, line)) {
-        if (line.empty()) {
-            break;
-        }
         std::vector<int> ticket = convert_vector(split_by_string(line, ","));
         int current_sum = invalid_ticket_values_sum(attributes, ticket);
         invalid_sum += current_sum;
