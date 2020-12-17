@@ -9,7 +9,8 @@ protected:
     std::vector<int> coordinates;
     bool active;
     std::vector<std::string> neighbor_strings;
-    std::vector<std::string> calculate_neighbor_strings() {
+
+    virtual std::vector<std::string> calculate_neighbor_strings() {
         std::vector<std::string> neighbors;
         for (int i = -1; i <= 1; i++) {
             for (int j = -1; j <= 1; j++) {
@@ -24,13 +25,13 @@ protected:
         return neighbors;
     }
 public:
-    Cube(std::vector<int> coordinates, bool active) {
+    Cube(std::vector<int> &coordinates, bool active) {
         this->coordinates = coordinates;
         this->active = active;
         this->neighbor_strings = calculate_neighbor_strings();
     }
 
-    Cube(std::string coordinate_str, bool active) {
+    Cube(std::string &coordinate_str, bool active) {
         coordinates = convert_string_to_coords(coordinate_str);
         this->active = active;
         this->neighbor_strings = calculate_neighbor_strings();
@@ -70,19 +71,19 @@ public:
 
 class Cube4d : public Cube {
 public:
-    Cube4d(std::vector<int> coordinates, bool active) : Cube(coordinates, active) {
+    Cube4d(std::vector<int> &coordinates, bool active) : Cube(coordinates, active) {
         this->coordinates = coordinates;
         this->active = active;
         this->neighbor_strings=calculate_neighbor_strings();
     }
 
-    Cube4d(std::string coordinate_str, bool active) : Cube(coordinate_str, active) {
+    Cube4d(std::string &coordinate_str, bool active) : Cube(coordinate_str, active) {
         coordinates = convert_string_to_coords(coordinate_str);
         this->active = active;
         this->neighbor_strings=calculate_neighbor_strings();
     }
 private:
-    std::vector<std::string> calculate_neighbor_strings() {
+    std::vector<std::string> calculate_neighbor_strings() override {
         std::vector<std::string> neighbors;
         for (int i = -1; i <= 1; i++) {
             for (int j = -1; j <= 1; j++) {
@@ -107,10 +108,15 @@ private:
     std::unordered_map<std::string, Cube> active_cubes;
     std::unordered_map<std::string, std::vector<std::string>> neighbor_cache;
     void
-    activate(Cube cube, std::unordered_map<std::string, Cube> copy, std::unordered_map<std::string, Cube> &visited) {
+    activate(Cube cube, std::unordered_map<std::string, Cube> &copy, std::unordered_map<std::string, Cube> &visited) {
         if (!cube.is_active())
             return;
-        visited.insert({cube.get_coordinate_string(), cube});
+        try {
+            visited.at(cube.get_coordinate_string());
+            return;
+        } catch (std::out_of_range &e) {
+            visited.insert({cube.get_coordinate_string(), cube});
+        }
         if (!should_be_active(copy, cube))
             active_cubes.erase(cube.get_coordinate_string());
         std::vector<std::string> neighbor_coordinates;
@@ -120,7 +126,7 @@ private:
             neighbor_coordinates = cube.get_neighbor_strings();
             neighbor_cache.insert({cube.get_coordinate_string(), neighbor_coordinates});
         }
-        for (auto coord: neighbor_coordinates) {
+        for (auto &coord: neighbor_coordinates) {
             try {
                 Cube curr = active_cubes.at(coord);
                 try {
@@ -147,7 +153,7 @@ public:
     static bool should_be_active(std::unordered_map<std::string, Cube> active_cubes, Cube cube) {
         std::vector<std::string> neighbor_coordinates = cube.get_neighbor_strings();
         int active_n_count = 0;
-        for (auto coord: neighbor_coordinates) {
+        for (auto &coord: neighbor_coordinates) {
             try {
                 active_cubes.at(coord);
                 active_n_count++;
@@ -168,7 +174,7 @@ public:
         for (int i = 0; i < cycle; i++) {
             std::unordered_map<std::string, Cube> copy = active_cubes;
             std::unordered_map<std::string, Cube> visited_cache;
-            for (auto cube: active_cubes) {
+            for (auto &cube: copy) {
                 activate(cube.second, copy, visited_cache);
             }
             std::cout << "Cycle " << i+1 << " active count: " << active_cubes.size() << std::endl;
@@ -183,10 +189,15 @@ private:
     std::unordered_map<std::string, std::vector<std::string>> neighbor_cache;
 
     void
-    activate(Cube4d cube, std::unordered_map<std::string, Cube4d> copy, std::unordered_map<std::string, Cube4d> &visited) {
+    activate(Cube4d cube, std::unordered_map<std::string, Cube4d> &copy, std::unordered_map<std::string, Cube4d> &visited) {
         if (!cube.is_active())
             return;
-        visited.insert({cube.get_coordinate_string(), cube});
+        try {
+            visited.at(cube.get_coordinate_string());
+            return;
+        } catch (std::out_of_range &e) {
+            visited.insert({cube.get_coordinate_string(), cube});
+        }
         if (!should_be_active(copy, cube))
             active_cubes.erase(cube.get_coordinate_string());
         std::vector<std::string> neighbor_coordinates;
@@ -196,7 +207,7 @@ private:
             neighbor_coordinates = cube.get_neighbor_strings();
             neighbor_cache.insert({cube.get_coordinate_string(), neighbor_coordinates});
         }
-        for (auto coord: neighbor_coordinates) {
+        for (auto &coord: neighbor_coordinates) {
             try {
                 Cube4d curr = active_cubes.at(coord);
                 try {
@@ -223,7 +234,7 @@ public:
     static bool should_be_active(std::unordered_map<std::string, Cube4d> active_cubes, Cube4d cube) {
         std::vector<std::string> neighbor_coordinates = cube.get_neighbor_strings();
         int active_n_count = 0;
-        for (auto coord: neighbor_coordinates) {
+        for (auto &coord: neighbor_coordinates) {
             try {
                 active_cubes.at(coord);
                 active_n_count++;
@@ -244,7 +255,7 @@ public:
         for (int i = 0; i < cycle; i++) {
             std::unordered_map<std::string, Cube4d> copy = active_cubes;
             std::unordered_map<std::string, Cube4d> visited_cache;
-            for (auto cube: active_cubes) {
+            for (auto &cube: copy) {
                 activate(cube.second, copy, visited_cache);
             }
             std::cout << "Cycle " << i+1 << " active count: " << active_cubes.size() << std::endl;
