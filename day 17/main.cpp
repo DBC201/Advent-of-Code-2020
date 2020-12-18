@@ -8,33 +8,16 @@ class Cube {
 protected:
     std::vector<int> coordinates;
     bool active;
-    std::vector<std::string> neighbor_strings;
 
-    virtual std::vector<std::string> calculate_neighbor_strings() {
-        std::vector<std::string> neighbors;
-        for (int i = -1; i <= 1; i++) {
-            for (int j = -1; j <= 1; j++) {
-                for (int k = -1; k <= 1; k++) {
-                    if (i == 0 && j == 0 && k == 0)
-                        continue;
-                    neighbors.push_back(
-                            convert_coords_to_string({coordinates[0] + i, coordinates[1] + j, coordinates[2] + k}));
-                }
-            }
-        }
-        return neighbors;
-    }
 public:
     Cube(std::vector<int> &coordinates, bool active) {
         this->coordinates = coordinates;
         this->active = active;
-        this->neighbor_strings = calculate_neighbor_strings();
     }
 
     Cube(std::string &coordinate_str, bool active) {
         coordinates = convert_string_to_coords(coordinate_str);
         this->active = active;
-        this->neighbor_strings = calculate_neighbor_strings();
     }
 
     static std::vector<int> convert_string_to_coords(std::string coordinate_str) {
@@ -56,8 +39,19 @@ public:
         return convert_coords_to_string(coordinates);
     }
 
-    std::vector<std::string> get_neighbor_strings() {
-        return neighbor_strings;
+    virtual std::vector<std::string> get_neighbor_strings() {
+        std::vector<std::string> neighbors;
+        for (int i = -1; i <= 1; i++) {
+            for (int j = -1; j <= 1; j++) {
+                for (int k = -1; k <= 1; k++) {
+                    if (i == 0 && j == 0 && k == 0)
+                        continue;
+                    neighbors.push_back(
+                            convert_coords_to_string({coordinates[0] + i, coordinates[1] + j, coordinates[2] + k}));
+                }
+            }
+        }
+        return neighbors;
     }
 
     void change_status() {
@@ -74,16 +68,14 @@ public:
     Cube4d(std::vector<int> &coordinates, bool active) : Cube(coordinates, active) {
         this->coordinates = coordinates;
         this->active = active;
-        this->neighbor_strings=calculate_neighbor_strings();
     }
 
     Cube4d(std::string &coordinate_str, bool active) : Cube(coordinate_str, active) {
         coordinates = convert_string_to_coords(coordinate_str);
         this->active = active;
-        this->neighbor_strings=calculate_neighbor_strings();
     }
-private:
-    std::vector<std::string> calculate_neighbor_strings() override {
+
+    std::vector<std::string> get_neighbor_strings() override {
         std::vector<std::string> neighbors;
         for (int i = -1; i <= 1; i++) {
             for (int j = -1; j <= 1; j++) {
@@ -150,8 +142,14 @@ public:
         active_cubes.insert({cube.get_coordinate_string(), cube});
     }
 
-    static bool should_be_active(std::unordered_map<std::string, Cube> active_cubes, Cube cube) {
-        std::vector<std::string> neighbor_coordinates = cube.get_neighbor_strings();
+    bool should_be_active(std::unordered_map<std::string, Cube> active_cubes, Cube cube) {
+        std::vector<std::string> neighbor_coordinates;
+        try {
+            neighbor_coordinates = neighbor_cache.at(cube.get_coordinate_string());
+        } catch (std::out_of_range &e) {
+            neighbor_coordinates = cube.get_neighbor_strings();
+            neighbor_cache.insert({cube.get_coordinate_string(),neighbor_coordinates});
+        }
         int active_n_count = 0;
         for (auto &coord: neighbor_coordinates) {
             try {
@@ -231,8 +229,14 @@ public:
         active_cubes.insert({cube.get_coordinate_string(), cube});
     }
 
-    static bool should_be_active(std::unordered_map<std::string, Cube4d> active_cubes, Cube4d cube) {
-        std::vector<std::string> neighbor_coordinates = cube.get_neighbor_strings();
+    bool should_be_active(std::unordered_map<std::string, Cube4d> active_cubes, Cube4d cube) {
+        std::vector<std::string> neighbor_coordinates;
+        try {
+            neighbor_coordinates = neighbor_cache.at(cube.get_coordinate_string());
+        } catch (std::out_of_range &e) {
+            neighbor_coordinates = cube.get_neighbor_strings();
+            neighbor_cache.insert({cube.get_coordinate_string(),neighbor_coordinates});
+        }
         int active_n_count = 0;
         for (auto &coord: neighbor_coordinates) {
             try {
