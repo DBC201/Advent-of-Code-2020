@@ -77,8 +77,6 @@ std::string generate_regex(std::unordered_map<std::string, std::string> rules, s
                     }
                 }
                 regex_string += ")";
-                if (regex_string == "(|)")
-                    regex_string = "";
                 regex_cache.insert({rule_id, regex_string});
                 return regex_string;
             }
