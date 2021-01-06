@@ -39,8 +39,6 @@ std::string remove_spaces(std::string str) {
     return str;
 }
 
-
-
 std::vector<int> string_to_int_vector(std::vector<std::string> v) {
     std::vector<int> to_convert;
     for (auto i: v)
