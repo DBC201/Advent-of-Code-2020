@@ -3,28 +3,21 @@
 #include <vector>
 #include <unordered_map>
 #include "../commonly_used_functions/library.cpp"
+#include <chrono>
 
-class Cube {
-protected:
-    std::vector<int> coordinates;
-    bool active;
-
+class Space3d{
+private:
+    std::unordered_map<std::string, bool> cubes;
 public:
-    Cube(std::vector<int> &coordinates, bool active) {
-        this->coordinates = coordinates;
-        this->active = active;
+    void add_cube(std::vector<int> coordinates) {
+        cubes.insert({convert_coord_vector_to_string(coordinates), true});
     }
 
-    Cube(std::string &coordinate_str, bool active) {
-        coordinates = convert_string_to_coords(coordinate_str);
-        this->active = active;
-    }
-
-    static std::vector<int> convert_string_to_coords(std::string coordinate_str) {
+    static std::vector<int> convert_coord_string_to_vector(std::string coordinate_str) {
         return string_to_int_vector(split_by_string(coordinate_str, ","));
     }
 
-    static std::string convert_coords_to_string(std::vector<int> coords) {
+    static std::string convert_coord_vector_to_string(std::vector<int> coords) {
         std::string final;
         for (int i = 0; i < coords.size(); i++) {
             if (i == coords.size() - 1)
@@ -35,11 +28,17 @@ public:
         return final;
     }
 
-    std::string get_coordinate_string() {
-        return convert_coords_to_string(coordinates);
+    int active_count() {
+        int count = 0;
+        for (auto &cube: cubes) {
+            if (cube.second)
+                count++;
+        }
+        return count;
     }
 
-    virtual std::vector<std::string> get_neighbor_strings() {
+    virtual std::vector<std::string> calculate_neighbors(std::string coordinate) {
+        std::vector<int> coordinates = convert_coord_string_to_vector(coordinate);
         std::vector<std::string> neighbors;
         for (int i = -1; i <= 1; i++) {
             for (int j = -1; j <= 1; j++) {
@@ -47,35 +46,61 @@ public:
                     if (i == 0 && j == 0 && k == 0)
                         continue;
                     neighbors.push_back(
-                            convert_coords_to_string({coordinates[0] + i, coordinates[1] + j, coordinates[2] + k}));
+                            convert_coord_vector_to_string({coordinates[0] + i, coordinates[1] + j, coordinates[2] + k}));
                 }
             }
         }
         return neighbors;
     }
 
-    void change_status() {
-        active = !active;
-    }
+    void simulate_cycles(int cycles) {
+        for (int i=0; i<cycles; i++) {
+            std::unordered_map<std::string, bool> new_cubes = cubes;
+            std::unordered_map<std::string, int> inactives_active_neighbors;
+            auto add_to_inactive = [] (std::unordered_map<std::string, int> &inactives, std::string &coordinate) {
+                try {
+                    inactives.at(coordinate)++;
+                } catch (std::out_of_range &e) {
+                    inactives.insert({coordinate, 1});
+                }
+            };
+            for (auto &cube: cubes) {
+                if (!cube.second)
+                    continue;
+                int active_neighbor_count = 0;
+                std::vector<std::string> neighbors = calculate_neighbors(cube.first);
+                for (auto &neighbor: neighbors) {
+                    try {
+                        if (cubes.at(neighbor))
+                            active_neighbor_count++;
+                        else
+                            add_to_inactive(inactives_active_neighbors, neighbor);
+                    } catch (std::out_of_range &e) {
+                        add_to_inactive(inactives_active_neighbors, neighbor);
+                    }
+                }
 
-    bool is_active() {
-        return active;
+                if (active_neighbor_count != 2 && active_neighbor_count != 3)
+                    new_cubes.at(cube.first) = false;
+            }
+
+            for (auto &inactive: inactives_active_neighbors){
+                if (inactive.second == 3) {
+                    try {
+                        new_cubes.at(inactive.first) = true;
+                    } catch (std::out_of_range &e) {
+                        new_cubes.insert({inactive.first, true});
+                    }
+                }
+            }
+            cubes = new_cubes;
+        }
     }
 };
 
-class Cube4d : public Cube {
-public:
-    Cube4d(std::vector<int> &coordinates, bool active) : Cube(coordinates, active) {
-        this->coordinates = coordinates;
-        this->active = active;
-    }
-
-    Cube4d(std::string &coordinate_str, bool active) : Cube(coordinate_str, active) {
-        coordinates = convert_string_to_coords(coordinate_str);
-        this->active = active;
-    }
-
-    std::vector<std::string> get_neighbor_strings() override {
+class Space4d: public Space3d {
+    std::vector<std::string> calculate_neighbors(std::string coordinate) override {
+        std::vector<int> coordinates = convert_coord_string_to_vector(coordinate);
         std::vector<std::string> neighbors;
         for (int i = -1; i <= 1; i++) {
             for (int j = -1; j <= 1; j++) {
@@ -84,191 +109,18 @@ public:
                         if (i == 0 && j == 0 && k == 0 && w == 0)
                             continue;
                         neighbors.push_back(
-                                convert_coords_to_string({coordinates[0] + i, coordinates[1] + j, coordinates[2] + k,
-                                                          coordinates[3] + w}));
+                                convert_coord_vector_to_string({coordinates[0] + i, coordinates[1] + j, coordinates[2] + k, coordinates[3] + w}));
                     }
                 }
             }
         }
         return neighbors;
     }
-
-};
-
-class Space {
-private:
-    std::unordered_map<std::string, Cube> active_cubes;
-    std::unordered_map<std::string, std::vector<std::string>> neighbor_cache;
-    void
-    activate(Cube cube, std::unordered_map<std::string, Cube> &copy, std::unordered_map<std::string, Cube> &visited) {
-        if (!cube.is_active())
-            return;
-        try {
-            visited.at(cube.get_coordinate_string());
-            return;
-        } catch (std::out_of_range &e) {
-            visited.insert({cube.get_coordinate_string(), cube});
-        }
-        if (!should_be_active(copy, cube))
-            active_cubes.erase(cube.get_coordinate_string());
-        std::vector<std::string> neighbor_coordinates;
-        try {
-            neighbor_coordinates = neighbor_cache.at(cube.get_coordinate_string());
-        } catch (std::out_of_range &e) {
-            neighbor_coordinates = cube.get_neighbor_strings();
-            neighbor_cache.insert({cube.get_coordinate_string(), neighbor_coordinates});
-        }
-        for (auto &coord: neighbor_coordinates) {
-            try {
-                Cube curr = active_cubes.at(coord);
-                try {
-                    visited.at(curr.get_coordinate_string());
-                } catch (std::out_of_range &e) {
-                    activate(curr, copy, visited);
-                }
-            } catch (std::out_of_range &e) {
-                Cube curr(coord, false);
-                if (should_be_active(copy, curr)) {
-                    curr.change_status();
-                    active_cubes.insert({curr.get_coordinate_string(), curr});
-                }
-            }
-        }
-    }
-
-public:
-    void add_cube(std::vector<int> coordinates) {
-        Cube cube(coordinates, true);
-        active_cubes.insert({cube.get_coordinate_string(), cube});
-    }
-
-    bool should_be_active(std::unordered_map<std::string, Cube> active_cubes, Cube cube) {
-        std::vector<std::string> neighbor_coordinates;
-        try {
-            neighbor_coordinates = neighbor_cache.at(cube.get_coordinate_string());
-        } catch (std::out_of_range &e) {
-            neighbor_coordinates = cube.get_neighbor_strings();
-            neighbor_cache.insert({cube.get_coordinate_string(),neighbor_coordinates});
-        }
-        int active_n_count = 0;
-        for (auto &coord: neighbor_coordinates) {
-            try {
-                active_cubes.at(coord);
-                active_n_count++;
-            } catch (std::out_of_range &e) {
-
-            }
-        }
-        if (cube.is_active() && (active_n_count != 2 && active_n_count != 3))
-            return false;
-        else if (!cube.is_active() && active_n_count == 3)
-            return true;
-        else
-            return cube.is_active();
-    }
-
-    int return_active_count(int cycle) {
-        std::cout << "Calculating 3d for " << cycle << " cycles" << std::endl;
-        for (int i = 0; i < cycle; i++) {
-            std::unordered_map<std::string, Cube> copy = active_cubes;
-            std::unordered_map<std::string, Cube> visited_cache;
-            for (auto &cube: copy) {
-                activate(cube.second, copy, visited_cache);
-            }
-            std::cout << "Cycle " << i+1 << " active count: " << active_cubes.size() << std::endl;
-        }
-        return active_cubes.size();
-    }
-};
-
-class Space4d {
-private:
-    std::unordered_map<std::string, Cube4d> active_cubes;
-    std::unordered_map<std::string, std::vector<std::string>> neighbor_cache;
-
-    void
-    activate(Cube4d cube, std::unordered_map<std::string, Cube4d> &copy, std::unordered_map<std::string, Cube4d> &visited) {
-        if (!cube.is_active())
-            return;
-        try {
-            visited.at(cube.get_coordinate_string());
-            return;
-        } catch (std::out_of_range &e) {
-            visited.insert({cube.get_coordinate_string(), cube});
-        }
-        if (!should_be_active(copy, cube))
-            active_cubes.erase(cube.get_coordinate_string());
-        std::vector<std::string> neighbor_coordinates;
-        try {
-            neighbor_coordinates = neighbor_cache.at(cube.get_coordinate_string());
-        } catch (std::out_of_range &e) {
-            neighbor_coordinates = cube.get_neighbor_strings();
-            neighbor_cache.insert({cube.get_coordinate_string(), neighbor_coordinates});
-        }
-        for (auto &coord: neighbor_coordinates) {
-            try {
-                Cube4d curr = active_cubes.at(coord);
-                try {
-                    visited.at(curr.get_coordinate_string());
-                } catch (std::out_of_range &e) {
-                    activate(curr, copy, visited);
-                }
-            } catch (std::out_of_range &e) {
-                Cube4d curr(coord, false);
-                if (should_be_active(copy, curr)) {
-                    curr.change_status();
-                    active_cubes.insert({curr.get_coordinate_string(), curr});
-                }
-            }
-        }
-    }
-
-public:
-    void add_cube(std::vector<int> coordinates) {
-        Cube4d cube(coordinates, true);
-        active_cubes.insert({cube.get_coordinate_string(), cube});
-    }
-
-    bool should_be_active(std::unordered_map<std::string, Cube4d> active_cubes, Cube4d cube) {
-        std::vector<std::string> neighbor_coordinates;
-        try {
-            neighbor_coordinates = neighbor_cache.at(cube.get_coordinate_string());
-        } catch (std::out_of_range &e) {
-            neighbor_coordinates = cube.get_neighbor_strings();
-            neighbor_cache.insert({cube.get_coordinate_string(),neighbor_coordinates});
-        }
-        int active_n_count = 0;
-        for (auto &coord: neighbor_coordinates) {
-            try {
-                active_cubes.at(coord);
-                active_n_count++;
-            } catch (std::out_of_range &e) {
-
-            }
-        }
-        if (cube.is_active() && (active_n_count != 2 && active_n_count != 3))
-            return false;
-        else if (!cube.is_active() && active_n_count == 3)
-            return true;
-        else
-            return cube.is_active();
-    }
-
-    int return_active_count(int cycle) {
-        std::cout << "Calculating 4d for " << cycle << " cycles" << std::endl;
-        for (int i = 0; i < cycle; i++) {
-            std::unordered_map<std::string, Cube4d> copy = active_cubes;
-            std::unordered_map<std::string, Cube4d> visited_cache;
-            for (auto &cube: copy) {
-                activate(cube.second, copy, visited_cache);
-            }
-            std::cout << "Cycle " << i+1 << " active count: " << active_cubes.size() << std::endl;
-        }
-        return active_cubes.size();
-    }
 };
 
 int main() {
+    std::chrono::time_point<std::chrono::system_clock> begin, end;
+    begin = std::chrono::system_clock::now();
     std::fstream file;
     file.open("../input.txt", std::fstream::in);
     if (!file.is_open()) {
@@ -277,19 +129,24 @@ int main() {
     }
     std::string line;
     int y = 0;
-    Space space;
-    Space4d space4d;
+    Space3d space3d;
+    Space4d space4D;
     while (getline(file, line)) {
         for (int x = 0; x < line.length(); x++) {
             if (line[x] == '#') {
-                space.add_cube({x, y, 0});
-                space4d.add_cube({x, y, 0, 0});
+                space3d.add_cube({x, y, 0});
+                space4D.add_cube({x, y, 0, 0});
             }
         }
         y++;
     }
     file.close();
-    std::cout << space.return_active_count(6) << std::endl;
-    std::cout << space4d.return_active_count(6) << std::endl;
+    space3d.simulate_cycles(6);
+    space4D.simulate_cycles(6);
+    std::cout << space3d.active_count() << std::endl;
+    std::cout << space4D.active_count() << std::endl;
+    end = std::chrono::system_clock::now();
+    std::chrono::duration<double> seconds = end-begin;
+    std::cout << "Execution time: " << seconds.count() << " seconds" << std::endl;
     return 0;
 }
